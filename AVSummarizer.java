@@ -1,20 +1,53 @@
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Map;
 
 /**
  * Created by yuehw on 16/4/17.
  */
 public class AVSummarizer {
     final int frameCnt = 300 * 15, width = 480, height = 270;
-    Map.Entry<Integer, Integer> GenerateMotionVector(byte[] last, byte[] now) {
-        Map.Entry<Integer, Integer> res = new Map.Entry<>();
+    int diff(int x, int y) {
+        return Math.abs(x - y);
+        //return (x - y) * (x - y);
+    }
+
+    int[] GenerateMotionVector(byte[] last, byte[] now) {
+        int[] res = new int[2];
+        int sumX = 0, sumY = 0;
+        int range = 10;
+        final int subX = 30, subY = 30;
+        for (int i = 0; i < height; i += subY) {
+            for (int j = 0; j < width; j += subX) {
+                int optX = 0, optY = 0;
+                long opt = 1l << 62;
+                for (int di = -range; di <= range; di++) {
+                    for (int dj = -range; dj <= range; dj++) {
+                        int u = i + di, d = i + di + subY, l = j + dj, r = j + dj + subX;
+                        if (l < 0 || r >= width || u < 0 || d >= height) {
+                            continue;
+                        }
+                        long diffSum = 0;
+                        for (int ii = u; ii < d; ii++) {
+                            for (int jj = l; jj < r; jj++) {
+                                byte lr = last[];
+                                byte lg = last[];
+                                byte lb = last[];
+                                byte nr = now[];
+                                byte ng = now[];
+                                byte nb = now[];
+                                diffSum += diff(lr, nr) + diff(lg, ng) + diff(lb, nb);
+                            }
+                        }
+                    }
+                }
+            }
+        }
         return res;
     }
 
     public ArrayList<Integer> GenerateVideoCutPoints(String inFile) {
         ArrayList<Integer> res = new ArrayList<Integer>();
-        ArrayList<Map.Entry<Integer, Integer>> motionVector = new ArrayList<Map.Entry<Integer, Integer>>();
+        ArrayList<int[]> motionVector = new ArrayList<int[]>();
         try {
             File inVideoFile = new File(inFile);
             InputStream is = new FileInputStream(inVideoFile);
@@ -30,7 +63,7 @@ public class AVSummarizer {
                     offset += numRead;
                 }
 
-                Map.Entry<Integer, Integer> ret = GenerateMotionVector(last, now);
+                int[] ret = GenerateMotionVector(last, now);
                 motionVector.add(ret);
             }
         } catch (FileNotFoundException e) {
